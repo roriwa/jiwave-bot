@@ -8,7 +8,7 @@ import logging
 import os
 import sys
 import discord
-from discord.ext.commands import Bot as DiscordBot, when_mentioned
+from discord.ext import commands
 from utility import logCalling
 
 
@@ -18,8 +18,8 @@ from utility import logCalling
 sys.modules['main'] = sys.modules['__main__']
 
 
-bot = DiscordBot(
-    command_prefix=when_mentioned,
+bot = commands.Bot(
+    command_prefix=commands.when_mentioned,
     intents=discord.Intents.default()
 )
 
@@ -41,6 +41,11 @@ async def setup_hook():
 
         logging.info(f"Importing {plugin}")
         await bot.load_extension(f'plugins.{plugin}')
+
+
+@bot.before_invoke
+async def before_invoke(context: commands.Context):
+    await context.typing()
 
 
 if __name__ == '__main__':
