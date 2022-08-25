@@ -1,6 +1,7 @@
 # Project related
 DISCORD-TOKEN.txt
 *.log
+*.sqlite
 
 # PyCharm related
 .idea/
