@@ -14,3 +14,10 @@ class ChannelConfig:
     channel_id: int
     channel_orig_name: str
     target_time: _datetime
+
+
+@_model
+class GuildConfig:
+    guild_id: int
+    guild_name: str
+    message_template: str

@@ -44,6 +44,12 @@ def ensureDatabase(conn: sqlite3.Connection):
         channel_orig_name TEXT,
         target_time TIMESTAMP
     )
+    
+    CREATE TABLE if not exists GuildConfig (
+        guild_id INTEGER,
+        guild_name TEXT,
+        message_template TEXT
+    )
     """)
 
 
@@ -82,7 +88,12 @@ def addOrUpdateChannel(guild: discord.Guild, channel: discord.VoiceChannel, date
                 "INSERT INTO ChannelConfig VALUES (?, ?, ?, ?, ?)",
                 [guild.id, guild.name, channel.id, channel.name, date]
             )
-        return m.ChannelConfig(**fetchLastRow(conn, cursor))
+        conn.commit()
+
+        return m.ChannelConfig(**conn.execute(
+            "SELECT * FROM ChannelConfig WHERE rowid = ?",
+            [cursor.lastrowid]
+        ).fetchone())
 
 
 def removeChannel(guild: discord.Guild, channel: discord.VoiceChannel) -> m.ChannelConfig:
@@ -96,8 +107,35 @@ def removeChannel(guild: discord.Guild, channel: discord.VoiceChannel) -> m.Chan
     return config
 
 
-def fetchLastRow(conn: sqlite3.Connection, cursor: sqlite3.Cursor) -> sqlite3.Row:
-    return conn.execute(
-        "SELECT * FROM ChannelConfig WHERE rowid = ?",
-        [cursor.lastrowid]
-    ).fetchone()
+def setTimeFormat(guild: discord.Guild, message_template: str) -> m.GuildConfig:
+    config = getGuildConfig(guild=guild)
+    with getConnection() as conn:
+        if config:
+            cursor = conn.execute(
+                "UPDATE ChannelConfig SET message_template = ? WHERE guild_id = ?",
+                [message_template, guild.id]
+            )
+        else:
+            cursor = conn.execute(
+                "INSERT INTO GuildConfig VALUES (?, ?, ?)",
+                [guild.id, guild.name, message_template]
+            )
+        conn.commit()
+
+        return m.GuildConfig(**conn.execute(
+            "SELECT * FROM ChannelConfig WHERE rowid = ?",
+            [cursor.lastrowid]
+        ).fetchone())
+
+
+def getGuildConfig(guild: discord.Guild) -> t.Optional[m.GuildConfig]:
+    with getConnection() as conn:
+        cursor = conn.execute(
+            "SELECT * FROM GuildConfig WHERE guild_id = ?",
+            [guild.id]
+        )
+        row = cursor.fetchone()
+        if row:
+            return m.GuildConfig(**row)
+        else:
+            return None
