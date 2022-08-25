@@ -47,7 +47,7 @@ async def getAvailableCommands(context: commands.Context):
     usable = []
     for command in bot.commands:
         try:
-            if command.can_run(context):
+            if await command.can_run(context):
                 usable.append(command)
         except Exception:  # noqa
             pass
