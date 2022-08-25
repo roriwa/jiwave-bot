@@ -15,6 +15,8 @@ async def setup(bot: commands.Bot):
 
 
 async def on_command_error(context: commands.Context, error: Exception):
+    if isinstance(error, commands.CommandInvokeError):
+        error = error.original
     embed = discord.Embed(
         color=discord.Color.red(),
         title=formatClassName(error.__class__.__qualname__),
