@@ -3,6 +3,7 @@
 r"""
 
 """
+import asyncio
 import traceback
 from datetime import datetime
 
@@ -11,6 +12,7 @@ from discord.ext import tasks
 import dateutil.utils as dateutils
 import humanize
 import datamanagement
+import utility
 
 
 async def setup(_):
@@ -18,16 +20,25 @@ async def setup(_):
 
 
 @tasks.loop(hours=1)  # update every hour, maybe every day later
+@utility.logCalling
 async def channelUpdater():
     from main import bot
 
+    all_edits = []
+
     for guild in bot.guilds:
         configs = datamanagement.listChannels(guild=guild)
+        guild_config = datamanagement.getGuildConfig(guild=guild)
+        template = guild_config.message_template
         for config in configs:
             channel: discord.VoiceChannel = bot.get_channel(config.channel_id)
-            timestring = getTimeText(target=config.target_time)
+            timestring = getTimeText(template=template, target=config.target_time)
             if channel.name != timestring:
-                await channel.edit(reason="time-update", name=timestring)
+                all_edits.append(
+                    channel.edit(reason="time-update", name=timestring)
+                )
+
+    await asyncio.gather(*all_edits)
 
 
 @channelUpdater.before_loop
@@ -41,7 +52,10 @@ async def onError(exception: Exception):
     traceback.print_exception(type(exception), exception, exception.__traceback__)
 
 
-def getTimeText(target: datetime):
+def getTimeText(template: str, target: datetime):
     now = dateutils.today()
     delta = now - target
-    return humanize.precisedelta(delta, minimum_unit='hours')
+    datestr = humanize.precisedelta(delta, minimum_unit='hours')
+    return template.format(
+        time=datestr
+    )
