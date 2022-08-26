@@ -4,6 +4,7 @@ r"""
 
 """
 import asyncio
+import logging
 import traceback
 from datetime import datetime
 
@@ -32,6 +33,10 @@ async def channelUpdater():
         template = guild_config.message_template
         for config in configs:
             channel: discord.VoiceChannel = bot.get_channel(config.channel_id)
+            if not channel:
+                logging.warning(f"channel not found. can't update. ({config.guild_id}: {config.channel_orig_name})")
+                continue
+
             timestring = getTimeText(template=template, target=config.target_time)
             if channel.name != timestring:
                 all_edits.append(
