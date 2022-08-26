@@ -7,5 +7,8 @@ from .crud import (
     listChannels,
     getChannelConfig,
     addOrUpdateChannel,
-    removeChannel
+    removeChannel,
+
+    getGuildConfig,
+    setTimeFormat
 )

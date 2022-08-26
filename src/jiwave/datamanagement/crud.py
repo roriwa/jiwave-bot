@@ -43,13 +43,13 @@ def ensureDatabase(conn: sqlite3.Connection):
         channel_id INTEGER,
         channel_orig_name TEXT,
         target_time TIMESTAMP
-    )
+    );
     
     CREATE TABLE if not exists GuildConfig (
         guild_id INTEGER,
         guild_name TEXT,
         message_template TEXT
-    )
+    );
     """)
 
 
@@ -75,7 +75,7 @@ def getChannelConfig(guild: discord.Guild, channel: discord.VoiceChannel) -> t.O
             return None
 
 
-def addOrUpdateChannel(guild: discord.Guild, channel: discord.VoiceChannel, date: datetime.datetime) -> m.ChannelConfig:
+def addOrUpdateChannel(guild: discord.Guild, channel: discord.VoiceChannel, date: datetime.datetime) -> None:
     config = getChannelConfig(guild=guild, channel=channel)
     with getConnection() as conn:
         if config:
@@ -90,10 +90,10 @@ def addOrUpdateChannel(guild: discord.Guild, channel: discord.VoiceChannel, date
             )
         conn.commit()
 
-        return m.ChannelConfig(**conn.execute(
-            "SELECT * FROM ChannelConfig WHERE rowid = ?",
-            [cursor.lastrowid]
-        ).fetchone())
+        # return m.ChannelConfig(**conn.execute(
+        #     "SELECT * FROM ChannelConfig WHERE rowid = ?",
+        #     [cursor.lastrowid]
+        # ).fetchone())
 
 
 def removeChannel(guild: discord.Guild, channel: discord.VoiceChannel) -> m.ChannelConfig:
@@ -107,12 +107,12 @@ def removeChannel(guild: discord.Guild, channel: discord.VoiceChannel) -> m.Chan
     return config
 
 
-def setTimeFormat(guild: discord.Guild, message_template: str) -> m.GuildConfig:
+def setTimeFormat(guild: discord.Guild, message_template: str) -> None:
     config = getGuildConfig(guild=guild)
     with getConnection() as conn:
         if config:
             cursor = conn.execute(
-                "UPDATE ChannelConfig SET message_template = ? WHERE guild_id = ?",
+                "UPDATE GuildConfig SET message_template = ? WHERE guild_id = ?",
                 [message_template, guild.id]
             )
         else:
@@ -122,10 +122,10 @@ def setTimeFormat(guild: discord.Guild, message_template: str) -> m.GuildConfig:
             )
         conn.commit()
 
-        return m.GuildConfig(**conn.execute(
-            "SELECT * FROM ChannelConfig WHERE rowid = ?",
-            [cursor.lastrowid]
-        ).fetchone())
+        # return m.GuildConfig(**conn.execute(
+        #     "SELECT * FROM GuildConfig WHERE rowid = ?",
+        #     [cursor.lastrowid]
+        # ).fetchone())
 
 
 def getGuildConfig(guild: discord.Guild) -> t.Optional[m.GuildConfig]:
@@ -138,4 +138,8 @@ def getGuildConfig(guild: discord.Guild) -> t.Optional[m.GuildConfig]:
         if row:
             return m.GuildConfig(**row)
         else:
-            return None
+            return m.GuildConfig(
+                guild_id=guild.id,
+                guild_name=guild.name,
+                message_template="{time}"
+            )
