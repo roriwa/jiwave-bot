@@ -69,10 +69,11 @@ async def cmd_add(context: commands.Context, channel: discord.VoiceChannel, date
     add or update the time for a channel
     """
     date = dateparser.parse(date, dayfirst=True)
+    channel_name = channel.name
     datamanagement.addOrUpdateChannel(guild=context.guild, channel=channel, date=date)
     embed = discord.Embed(
         color=discord.Color.green(),
-        title=f"{channel.name} was added",
+        title=f"{channel_name} was added",
         description=f"target date was recognised as {date.strftime('%d.%m.%Y')}"
     )
     await context.reply(embed=embed)
