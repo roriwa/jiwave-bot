@@ -9,7 +9,10 @@ import os
 import sys
 import discord
 from discord.ext import commands
+import humanize
 from utility import logCalling
+
+humanize.i18n.activate('de_DE')
 
 
 # this line removes a huge bug
