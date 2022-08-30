@@ -68,7 +68,7 @@ async def onError(exception: Exception):
 
 
 def getTimeText(template: str, target: datetime):
-    # datestr = timeStringHumanized(target)  # '2 days, 1 hour and 33.12 seconds'
+    # datestr = timeStringHumanized(target)  # '1 month, 7 days and 1 hour'
     datestr = timeStringDays(target)  # '5 days'
     return template.format(
         time=datestr
@@ -79,7 +79,7 @@ def timeStringHumanized(target: datetime):
     now = dateutils.today()
     delta = now - target
     return humanize.precisedelta(delta, minimum_unit='hours')
-    # '2 days, 1 hour and 33.12 seconds'
+    # '1 month, 7 days and 1 hour'
 
 
 def timeStringDays(target: datetime):
@@ -87,4 +87,4 @@ def timeStringDays(target: datetime):
     delta = now - target
     days = delta.days
     return f"{days} {'day' if days == 1 else 'days'}"
-    # '5 days'
+    # '184 days'
