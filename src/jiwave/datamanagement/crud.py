@@ -50,6 +50,12 @@ def ensureDatabase(conn: sqlite3.Connection):
         guild_name TEXT,
         message_template TEXT
     );
+    
+    CREATE TABLE if not exists Logs (
+        guild_id INTEGER,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+        message TEXT
+    );
     """)
 
 
@@ -111,16 +117,15 @@ def setTimeFormat(guild: discord.Guild, message_template: str) -> None:
     config = getGuildConfig(guild=guild)
     with getConnection() as conn:
         if config:
-            cursor = conn.execute(
+            conn.execute(
                 "UPDATE GuildConfig SET message_template = ? WHERE guild_id = ?",
                 [message_template, guild.id]
             )
         else:
-            cursor = conn.execute(
+            conn.execute(
                 "INSERT INTO GuildConfig VALUES (?, ?, ?)",
                 [guild.id, guild.name, message_template]
             )
-        conn.commit()
 
         # return m.GuildConfig(**conn.execute(
         #     "SELECT * FROM GuildConfig WHERE rowid = ?",
@@ -143,3 +148,28 @@ def getGuildConfig(guild: discord.Guild) -> t.Optional[m.GuildConfig]:
                 guild_name=guild.name,
                 message_template="{time}"
             )
+
+
+def createLogRecord(guild: discord.Guild, message: str):
+    with getConnection() as conn:
+        conn.execute(
+            "INSERT INTO Logs (guild_id, message) VALUES (?, ?)",
+            [guild.id, message]
+        )
+
+
+def getLastLogs(guild: discord.Guild, limit: int = 10) -> t.List[m.LogRecord]:
+    with getConnection() as conn:
+        cursor = conn.execute(
+            "SELECT * FROM Logs WHERE guild_id = ? ORDER BY timestamp DESC LIMIT ?",
+            [guild.id, limit]
+        )
+        return [m.LogRecord(**row) for row in cursor.fetchall()]
+
+
+def reduceLogs():
+    with getConnection() as conn:
+        conn.execute(
+            "DELETE FROM Logs WHERE timestamp < date('now','-2 days')"
+            # "DELETE FROM Logs WHERE timestamp < datetime('now','-60 seconds')"
+        )

@@ -10,5 +10,9 @@ from .crud import (
     removeChannel,
 
     getGuildConfig,
-    setTimeFormat
+    setTimeFormat,
+
+    createLogRecord,
+    getLastLogs,
+    reduceLogs
 )

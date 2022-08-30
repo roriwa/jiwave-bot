@@ -21,3 +21,10 @@ class GuildConfig:
     guild_id: int
     guild_name: str
     message_template: str
+
+
+@_model
+class LogRecord:
+    guild_id: int
+    timestamp: _datetime
+    message: str

@@ -40,10 +40,21 @@ async def channelUpdater():
             timestring = getTimeText(template=template, target=config.target_time)
             if channel.name != timestring:
                 all_edits.append(
-                    channel.edit(reason="time-update", name=timestring)
+                    channelEdit(channel=channel, name=timestring)
                 )
 
     await asyncio.gather(*all_edits)
+
+
+async def channelEdit(channel: discord.VoiceChannel, name: str):
+    try:
+        await channel.edit(reason="time-update", name=name)
+    except Exception as exception:
+        datamanagement.createLogRecord(
+            guild=channel.guild,
+            message=f"{channel.name}:{exception.__class__.__name__}:{exception}"
+        )
+        raise exception
 
 
 @channelUpdater.before_loop
@@ -54,7 +65,7 @@ async def waitForReady():
 
 @channelUpdater.error
 async def onError(exception: Exception):
-    traceback.print_exception(type(exception), exception, exception.__traceback__)
+    logging.error(str(exception), exc_info=exception)
 
 
 def getTimeText(template: str, target: datetime):
