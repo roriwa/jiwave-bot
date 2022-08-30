@@ -6,19 +6,16 @@ r"""
 import datetime
 import sqlite3
 import typing as t
-import os.path as path
 import logging
 
 import discord
 
+import utility
 from . import models as m
 
 
-DATABASE_PATH = path.abspath(path.join(
-    path.dirname(__file__),
-    '..',
-    'database.sqlite'
-))
+DATABASE_PATH = utility.localFile('database.sqlite')
+
 
 logging.info(f"DB-Path: {DATABASE_PATH}")
 
