@@ -5,8 +5,18 @@ r"""
 """
 import functools
 import logging
+import os
 import traceback
 from asyncio import iscoroutinefunction
+
+
+def localFile(*paths):
+    return os.path.abspath(
+        os.path.join(
+            os.path.dirname(__file__),
+            *paths
+        )
+    )
 
 
 def logCalling(func):
@@ -43,3 +53,25 @@ def logCalling(func):
         return functionWrapper
     else:
         raise TypeError(f"{func} is no function or coroutine")
+
+
+def getDiscordToken() -> str:
+    environ_key = os.getenv('DISCORD-TOKEN')
+    token_file = __getTokenFilePath()
+    if environ_key:
+        logging.info("loading 'discord-token from environment")
+        return environ_key
+    elif os.path.isfile(token_file):
+        logging.info(f"loading discord-token from file ({token_file})")
+        with open(token_file, 'r') as file:
+            return file.read()
+    else:
+        raise EnvironmentError('missing environment variable or token file (see README.md)')
+
+
+def __getTokenFilePath():
+    for level in range(3):
+        fp = localFile(*(['..'] * level), 'DISCORD-TOKEN.txt')
+        if os.path.isfile(fp):
+            return fp
+    return None

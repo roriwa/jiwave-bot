@@ -10,7 +10,8 @@ import sys
 import discord
 from discord.ext import commands
 import humanize
-from utility import logCalling
+
+import utility
 
 humanize.i18n.activate('de_DE')
 
@@ -35,7 +36,7 @@ async def on_error(*args):
 
 # @setup_hook is not possible, so we use this shortcut
 @(lambda c: setattr(bot, c.__name__, c))
-@logCalling
+@utility.logCalling
 async def setup_hook():
     for plugin in os.listdir('plugins'):
         plugin = os.path.splitext(plugin)[0]
@@ -53,6 +54,6 @@ async def before_invoke(context: commands.Context):
 
 if __name__ == '__main__':
     bot.run(
-        os.getenv("DISCORD-TOKEN"),
+        utility.getDiscordToken(),
         log_handler=None
     )
