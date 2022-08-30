@@ -5,7 +5,6 @@ r"""
 """
 import asyncio
 import logging
-import traceback
 from datetime import datetime
 
 import discord
@@ -69,9 +68,21 @@ async def onError(exception: Exception):
 
 
 def getTimeText(template: str, target: datetime):
-    now = dateutils.today()
-    delta = now - target
-    datestr = humanize.precisedelta(delta, minimum_unit='hours')
+    # datestr = timeStringHumanized(target)  # '2 days, 1 hour and 33.12 seconds'
+    datestr = timeStringDays(target)  # '5 days'
     return template.format(
         time=datestr
     )
+
+
+def timeStringHumanized(target: datetime):
+    now = dateutils.today()
+    delta = now - target
+    return humanize.precisedelta(delta, minimum_unit='hours')
+
+
+def timeStringDays(target: datetime):
+    now = dateutils.today()
+    delta = now - target
+    days = delta.days
+    return f"{days} {'day' if days == 1 else 'days'}"
