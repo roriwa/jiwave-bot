@@ -64,7 +64,7 @@ def getDiscordToken() -> str:
     elif os.path.isfile(token_file):
         logging.info(f"loading discord-token from file ({token_file})")
         with open(token_file, 'r') as file:
-            return file.read()
+            return file.readline()
     else:
         raise EnvironmentError('missing environment variable or token file (see README.md)')
 
