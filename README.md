@@ -18,7 +18,7 @@ small discord bot
 <sup>Note: The Permissions are currently not working perfectly (add admin manually or test a bit)</sup>
 
 ## Install Project
-```commandline
+```terminal
 user@pc:~$ git clone https://github.com/roriwa/jiwave-bot.git
 user@pc:~$ cd jiwave-bot
 user@pc:~$ scripts/install.sh
@@ -32,7 +32,7 @@ or create a `DISCORD-TOKEN.txt` file in the project root directory or in the `sr
 
 ### Manually (not recommended)
 
-```commandline
+```terminal
 user@pc:~$ /path/to/jiwave-bot/src/run.sh
 ```
 
