@@ -4,7 +4,7 @@
 cd "$(dirname "$0")/.." || exit 1
 
 # create venv if not already done
-if [[ ! -f .venv ]]
+if [[ ! -d .venv ]]
 then
   echo "Creating virtual environment..."
   python3 -m venv .venv
