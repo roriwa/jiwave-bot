@@ -14,7 +14,8 @@ small discord bot
 
 # Setup the Bot
 
-[invite the bot](https://discord.com/api/oauth2/authorize?client_id=1011312099940646952&permissions=2128&scope=bot)  
+[invite the bot](https://discord.com/api/oauth2/authorize?client_id=1011312099940646952&permissions=3152&scope=bot)  
+<sub>Current permissions: `manage-channels`, `read-messages/view-channels`, `send-messages`, `add-reactions`</sub>  
 <sup>Note: The Permissions are currently not working perfectly (add admin manually or test a bit)</sup>
 
 ## Install Project
