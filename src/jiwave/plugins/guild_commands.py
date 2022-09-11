@@ -12,12 +12,15 @@ async def setup(bot: commands.Bot):
     bot.add_command(cmd_timeformat)
 
 
+DEFAULT_TIMEFORMAT = "{time}"
+
+
 @commands.command(name="timeformat", aliases=['format', 'template'])
 async def cmd_timeformat(context: commands.Context, *, template: str = None):
     if template is None:
-        pass
+        pass  # just do nothing (equal to only read the current timeformat)
     elif template in ['default', 'reset']:
-        datamanagement.setTimeFormat(guild=context.guild, message_template="{time}")
+        datamanagement.setTimeFormat(guild=context.guild, message_template=DEFAULT_TIMEFORMAT)
     else:
         if not verifyTemplate(template):
             raise ValueError("invalid template. template must contain '{time}'")
