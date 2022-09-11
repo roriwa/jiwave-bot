@@ -61,7 +61,7 @@ def getDiscordToken() -> str:
     if environ_key:
         logging.info("loading 'discord-token from environment")
         return environ_key
-    elif os.path.isfile(token_file):
+    elif token_file and os.path.isfile(token_file):
         logging.info(f"loading discord-token from file ({token_file})")
         with open(token_file, 'r') as file:
             return file.readline()
