@@ -111,7 +111,7 @@ def removeChannel(guild: discord.Guild, channel: discord.VoiceChannel) -> m.Chan
 
 
 def setTimeFormat(guild: discord.Guild, message_template: str) -> None:
-    config = getGuildConfig(guild=guild)
+    config = getGuildConfig(guild=guild, fallback=False)
     with getConnection() as conn:
         if config:
             conn.execute(
@@ -130,7 +130,7 @@ def setTimeFormat(guild: discord.Guild, message_template: str) -> None:
         # ).fetchone())
 
 
-def getGuildConfig(guild: discord.Guild) -> t.Optional[m.GuildConfig]:
+def getGuildConfig(guild: discord.Guild, fallback=True) -> t.Optional[m.GuildConfig]:
     with getConnection() as conn:
         cursor = conn.execute(
             "SELECT * FROM GuildConfig WHERE guild_id = ?",
@@ -140,11 +140,14 @@ def getGuildConfig(guild: discord.Guild) -> t.Optional[m.GuildConfig]:
         if row:
             return m.GuildConfig(**row)
         else:
-            return m.GuildConfig(
-                guild_id=guild.id,
-                guild_name=guild.name,
-                message_template="{time}"
-            )
+            if fallback:
+                return m.GuildConfig(
+                    guild_id=guild.id,
+                    guild_name=guild.name,
+                    message_template="{time}"
+                )
+            else:
+                return None
 
 
 def createLogRecord(guild: discord.Guild, message: str):
