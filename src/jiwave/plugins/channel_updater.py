@@ -28,12 +28,23 @@ async def channelUpdater():
 
     for guild in bot.guilds:
         configs = datamanagement.listChannels(guild=guild)
+
+        if not configs:
+            datamanagement.createLogRecord(
+                guild=guild,
+                message=f"no channels configured for this guild"
+            )
+            continue
+
         guild_config = datamanagement.getGuildConfig(guild=guild)
         template = guild_config.message_template
         for config in configs:
             channel: discord.VoiceChannel = bot.get_channel(config.channel_id)
             if not channel:
-                logging.warning(f"channel not found. can't update. ({config.guild_id}: {config.channel_orig_name})")
+                datamanagement.createLogRecord(
+                    guild=guild,
+                    message=f"channel not found. can't update. ({config.guild_id}: {config.channel_orig_name})"
+                )
                 continue
 
             timestring = getTimeText(template=template, target=config.target_time)
@@ -84,7 +95,9 @@ def timeStringHumanized(target: datetime):
 
 def timeStringDays(target: datetime):
     now = dateutils.today()
-    delta = now - target
+    delta = target - now
     days = delta.days
+    if days <= 0:
+        return "no days"
     return f"{days} {'day' if days == 1 else 'days'}"
     # '184 days'
