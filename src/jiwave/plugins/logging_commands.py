@@ -13,8 +13,13 @@ async def setup(bot: commands.Bot):
 
 
 @commands.command(name="logs")
+@commands.guild_only()
 @commands.has_guild_permissions(manage_guild=True)
 async def cmd_logs(context: commands.Context):
+    r"""
+    show problems and notifications from the bot
+    """
+
     last_logs = datamanagement.getLastLogs(guild=context.guild, limit=10)
     if not last_logs:
         embed = discord.Embed(
