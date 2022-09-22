@@ -43,8 +43,8 @@ cmd_help: commands.Command
 
 def getCommandHelp(command: commands.Command):
     for attr in ['help', 'description', 'brief']:
-        if hasattr(command, attr):
-            return getattr(command, attr)
+        if getattr(command, attr, None):
+            return getattr(command, attr).split('\n', 1)[0]
     return "no help available"
 
 
