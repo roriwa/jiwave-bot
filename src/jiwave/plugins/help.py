@@ -25,7 +25,11 @@ async def cmd_help(context: commands.Context, *, commandName: str = None):
             embed.description = f"command {commandName} not found"
         else:
             embed.colour = discord.Colour.green()
-            embed.add_field(name=f"{command.name} {command.signature}", value=command.description, inline=False)
+            embed.add_field(
+                name=f"{context.clean_prefix}{command.name} {command.signature}",
+                value=command.help or "not available",
+                inline=False
+            )
     else:
         usable_commands = await getAvailableCommands(context)
         if usable_commands:
@@ -42,7 +46,7 @@ cmd_help: commands.Command
 
 
 def getCommandHelp(command: commands.Command):
-    for attr in ['help', 'description', 'brief']:
+    for attr in ['brief', 'description', 'help']:
         if getattr(command, attr, None):
             return getattr(command, attr).split('\n', 1)[0]
     return "no help available"
