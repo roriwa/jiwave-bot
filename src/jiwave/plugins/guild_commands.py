@@ -16,7 +16,15 @@ DEFAULT_TIMEFORMAT = "{time}"
 
 
 @commands.command(name="timeformat", aliases=['format', 'template'])
+@commands.guild_only()
+@commands.has_guild_permissions(manage_guild=True)
 async def cmd_timeformat(context: commands.Context, *, template: str = None):
+    r"""
+    set the timeformat for this server
+
+    {time} left => 185 days left
+    """
+
     if template is None:
         pass  # just do nothing (equal to only read the current timeformat)
     elif template in ['default', 'reset']:
