@@ -19,7 +19,13 @@ async def cmd_help(context: commands.Context, *, commandName: str = None):
     """
     embed = discord.Embed(title=f"Help for {commandName if commandName else 'jiwave-bot'}")
     if commandName:
-        pass
+        command = context.bot.get_command(commandName)
+        if not command:
+            embed.colour = discord.Colour.red()
+            embed.description = f"command {commandName} not found"
+        else:
+            embed.colour = discord.Colour.green()
+            embed.add_field(name=f"{command.name} {command.signature}", value=command.description, inline=False)
     else:
         usable_commands = await getAvailableCommands(context)
         if usable_commands:
@@ -47,7 +53,7 @@ async def getAvailableCommands(context: commands.Context):
     usable = []
     for command in bot.commands:
         try:
-            if await command.can_run(context):
+            if not command.hidden and await command.can_run(context):
                 usable.append(command)
         except Exception:  # noqa
             pass
