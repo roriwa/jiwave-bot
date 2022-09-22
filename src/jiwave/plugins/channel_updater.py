@@ -19,7 +19,7 @@ async def setup(_):
     channelUpdater.start()
 
 
-@tasks.loop(hours=1)  # update every hour, maybe every day later
+@tasks.loop(minutes=5)  # update every hour, maybe every day later
 @utility.logCalling
 async def channelUpdater():
     from main import bot
