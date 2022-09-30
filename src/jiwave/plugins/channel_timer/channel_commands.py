@@ -10,17 +10,20 @@ import datamanagement
 
 
 async def setup(bot: commands.Bot):
-    bot.add_command(cmd_list)
-    bot.add_command(cmd_info)
-    bot.add_command(cmd_add)
-    bot.add_command(cmd_ignore)
-
-    bot.add_command(cmd_timeformat)
+    bot.add_command(cmd_timer)
 
 
-@commands.command(name="list")
+@commands.group('timer')
 @commands.guild_only()
 @commands.has_guild_permissions(manage_guild=True)
+async def cmd_timer(context: commands.Context):
+    pass
+
+
+cmd_timer: commands.Group
+
+
+@cmd_timer.command(name="list")
 async def cmd_list(context: commands.Context):
     r"""
     list all for this server configured channels
@@ -45,9 +48,7 @@ async def cmd_list(context: commands.Context):
     await context.reply(embed=embed)
 
 
-@commands.command(name="info", aliases=['get'])
-@commands.guild_only()
-@commands.has_guild_permissions(manage_guild=True)
+@cmd_timer.command(name="info", aliases=['get'])
 async def cmd_info(context: commands.Context, channel: discord.VoiceChannel):
     r"""
     get the time for a channel
@@ -63,9 +64,7 @@ async def cmd_info(context: commands.Context, channel: discord.VoiceChannel):
     await context.reply(embed=embed)
 
 
-@commands.command(name="add", aliases=['set'])
-@commands.guild_only()
-@commands.has_guild_permissions(manage_guild=True)
+@cmd_timer.command(name="add", aliases=['set'])
 async def cmd_add(context: commands.Context, channel: discord.VoiceChannel, date: str):
     r"""
     add or update the time for a channel
@@ -81,9 +80,7 @@ async def cmd_add(context: commands.Context, channel: discord.VoiceChannel, date
     await context.reply(embed=embed)
 
 
-@commands.command(name="ignore", aliases=['remove'])
-@commands.guild_only()
-@commands.has_guild_permissions(manage_guild=True)
+@cmd_timer.command(name="ignore", aliases=['remove'])
 async def cmd_ignore(context: commands.Context, channel: discord.VoiceChannel):
     r"""
     remove a channel
@@ -106,12 +103,10 @@ cmd_ignore: commands.Command
 DEFAULT_TIMEFORMAT = "{time}"
 
 
-@commands.command(name="timeformat", aliases=['format', 'template'])
-@commands.guild_only()
-@commands.has_guild_permissions(manage_guild=True)
-async def cmd_timeformat(context: commands.Context, *, template: str = None):
+@cmd_timer.command(name="format", aliases=['format', 'template'])
+async def cmd_format(context: commands.Context, *, template: str = None):
     r"""
-    set the timeformat for this server
+    set the time-format for this server
 
     {time} left => 185 days left
     """
@@ -147,4 +142,4 @@ def verifyTemplate(template: str) -> bool:
         return False
 
 
-cmd_timeformat: commands.Command
+cmd_format: commands.Command
