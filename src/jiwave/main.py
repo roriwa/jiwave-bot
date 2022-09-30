@@ -39,12 +39,18 @@ async def on_error(*args):
 @utility.logCalling
 async def setup_hook():
     for plugin in os.listdir('plugins'):
-        plugin = os.path.splitext(plugin)[0]
         if plugin.startswith('_'):
             continue
 
-        logging.info(f"Importing {plugin}")
-        await bot.load_extension(f'plugins.{plugin}')
+        if os.path.isdir(plugin):
+            group = plugin
+            for module in os.listdir(os.path.join('plugins', group)):
+                await bot.load_extension(f'plugins.{group}.{module}')
+        else:
+            plugin = os.path.splitext(plugin)[0]
+
+            logging.info(f"Importing {plugin}")
+            await bot.load_extension(f'plugins.{plugin}')
 
 
 @bot.before_invoke
