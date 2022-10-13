@@ -5,7 +5,7 @@ r"""
 """
 import discord
 from discord.ext import commands
-import datamanagement
+import database
 
 
 async def setup(bot: commands.Bot):
@@ -20,7 +20,7 @@ async def cmd_logs(context: commands.Context):
     show problems and notifications from the bot
     """
 
-    last_logs = datamanagement.getLastLogs(guild=context.guild, limit=10)
+    last_logs = database.getLastLogs(guild=context.guild, limit=10)
     if not last_logs:
         embed = discord.Embed(
             title="No logs found",

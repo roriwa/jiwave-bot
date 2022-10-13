@@ -5,6 +5,7 @@ r"""
 """
 import discord
 from discord.ext import commands
+from database import Session, dbm
 
 
 async def setup(bot: commands.Bot):

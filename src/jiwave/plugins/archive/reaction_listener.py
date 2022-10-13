@@ -5,7 +5,7 @@ r"""
 """
 import discord
 from discord.ext import commands
-import datamanagement
+from database import Session, dbm
 
 
 def setup(bot: commands.Bot):

@@ -5,7 +5,7 @@ r"""
 """
 import logging
 from discord.ext import tasks
-import datamanagement
+import database
 import utility
 
 
@@ -16,7 +16,7 @@ async def setup(_):
 @tasks.loop(hours=6)
 @utility.logCalling
 async def reduceLogs():
-    datamanagement.reduceLogs()
+    database.reduceLogs()
 
 
 @reduceLogs.error
