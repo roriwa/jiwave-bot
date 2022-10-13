@@ -11,7 +11,7 @@ import logging
 import discord
 
 import utility
-from . import models as m
+from database import models as m
 
 
 DATABASE_PATH = utility.localFile('database.sqlite')
