@@ -6,7 +6,7 @@ r"""
 import dateutil.parser as dateparser
 import discord
 from discord.ext import commands
-import datamanagement
+from database import Session, dbm
 
 
 async def setup(bot: commands.Bot):
@@ -16,7 +16,7 @@ async def setup(bot: commands.Bot):
 @commands.group('timer')
 @commands.guild_only()
 @commands.has_guild_permissions(manage_guild=True)
-async def cmd_timer(context: commands.Context):
+async def cmd_timer(_: commands.Context):
     pass
 
 
@@ -33,7 +33,11 @@ async def cmd_list(context: commands.Context):
 
     guild = context.guild
 
-    configured_channels = datamanagement.listChannels(guild=guild)
+    with Session() as session:
+        configured_channels: [dbm.TimerConfig] = session\
+            .query(dbm.TimerConfig)\
+            .filter(dbm.TimerConfig.guild_id == guild.id)\
+            .all()
 
     if not configured_channels:
         embed.description = "No configured channels"
@@ -53,7 +57,13 @@ async def cmd_info(context: commands.Context, channel: discord.VoiceChannel):
     r"""
     get the time for a channel
     """
-    config = datamanagement.getChannelConfig(guild=context.guild, channel=channel)
+
+    with Session() as session:
+        config = session\
+            .query(dbm.TimerConfig)\
+            .filter(dbm.TimerConfig.guild_id == context.guild.id, dbm.TimerConfig.channel_id == channel.id)\
+            .one_or_none()
+
     embed = discord.Embed(color=discord.Color.green())
 
     if config:
@@ -71,7 +81,17 @@ async def cmd_add(context: commands.Context, channel: discord.VoiceChannel, date
     """
     date = dateparser.parse(date, dayfirst=True)
     channel_name = channel.name
-    datamanagement.addOrUpdateChannel(guild=context.guild, channel=channel, date=date)
+
+    timer_config = dbm.TimerConfig(
+        guild_id=context.guild.id,
+        channel_id=channel.id,
+        channel_orig_name=channel_name,
+        target_time=date
+    )
+
+    with Session() as session:
+        session.merge(timer_config)
+
     embed = discord.Embed(
         color=discord.Color.green(),
         title=f"{channel_name} was added",
@@ -85,7 +105,14 @@ async def cmd_ignore(context: commands.Context, channel: discord.VoiceChannel):
     r"""
     remove a channel
     """
-    config = datamanagement.removeChannel(guild=context.guild, channel=channel)
+    with Session() as session:
+        q = session\
+            .query(dbm.TimerConfig)\
+            .filter(dbm.TimerConfig.guild_id == context.guild.id, dbm.TimerConfig.channel_id == channel.id)
+
+        config: dbm.TimerConfig = q.one()
+        q.delete()
+
     await channel.edit(reason="channel will no longer be updated", name=config.channel_orig_name)
     embed = discord.Embed(
         color=discord.Color.green(),
@@ -100,9 +127,6 @@ cmd_add: commands.Command
 cmd_ignore: commands.Command
 
 
-DEFAULT_TIMEFORMAT = "{time}"
-
-
 @cmd_timer.command(name="format", aliases=['format', 'template'])
 async def cmd_format(context: commands.Context, *, template: str = None):
     r"""
@@ -114,19 +138,32 @@ async def cmd_format(context: commands.Context, *, template: str = None):
     if template is None:
         pass  # just do nothing (equal to only read the current timeformat)
     elif template in ['default', 'reset']:
-        datamanagement.setTimeFormat(guild=context.guild, message_template=DEFAULT_TIMEFORMAT)
+        with Session() as session:
+            session.query()\
+                .filter(dbm.GuildConfig.guild_id == context.guild.id)\
+                .delete()
     else:
         if not verifyTemplate(template):
             raise ValueError("invalid template. template must contain '{time}'")
 
-        datamanagement.setTimeFormat(guild=context.guild, message_template=template)
+        with Session() as s:
+            tmc: dbm.GuildConfig = s\
+                .query(dbm.GuildConfig)\
+                .filter(dbm.GuildConfig.guild_id == context.guild.id)\
+                .one()
+            tmc.message_template = template
+            s.commit()
 
-    config = datamanagement.getGuildConfig(guild=context.guild)
+    with Session() as session:
+        config: dbm.GuildConfig = session\
+            .query(dbm.GuildConfig)\
+            .filter(dbm.GuildConfig.guild_id == context.guild.id)\
+            .one_or_none()
 
     embed = discord.Embed(
         color=discord.Color.green(),
         title="Timeformat for this Server",
-        description=f"{config.message_template}"
+        description=f"{config.message_template if config else '{time}'}"
     )
     await context.reply(embed=embed)
 
@@ -135,7 +172,7 @@ def verifyTemplate(template: str) -> bool:
     try:
         # one dry formatting
         template.format(
-            time="01.01.1970"
+            time="365 days"
         )
         return "{time}" in template  # verify that the time is at least once used
     except KeyError:

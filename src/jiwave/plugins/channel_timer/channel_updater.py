@@ -11,7 +11,8 @@ import discord
 from discord.ext import tasks
 import dateutil.utils as dateutils
 import humanize
-import datamanagement
+import database
+from database import Session, dbm
 import utility
 
 
@@ -27,21 +28,31 @@ async def channelUpdater():
     all_edits = []
 
     for guild in bot.guilds:
-        configs = datamanagement.listChannels(guild=guild)
+        with Session() as session:
+            configs: [dbm.TimerConfig] = session\
+                .query(dbm.TimerConfig)\
+                .filter(dbm.TimerConfig.guild_id == guild.id)\
+                .all()
 
         if not configs:
-            datamanagement.createLogRecord(
+            database.createLogRecord(
                 guild=guild,
                 message=f"no channels configured for this guild"
             )
             continue
 
-        guild_config = datamanagement.getGuildConfig(guild=guild)
-        template = guild_config.message_template
+        with Session() as session:
+            guild_config = session\
+                .query(dbm.GuildConfig)\
+                .filter(dbm.GuildConfig.guild_id == guild.id)\
+                .one_or_none()
+
+        template = guild_config.message_template if guild_config else None
+
         for config in configs:
             channel: discord.VoiceChannel = bot.get_channel(config.channel_id)
             if not channel:
-                datamanagement.createLogRecord(
+                database.createLogRecord(
                     guild=guild,
                     message=f"channel not found. can't update. ({config.guild_id}: {config.channel_orig_name})"
                 )
@@ -60,7 +71,7 @@ async def channelEdit(channel: discord.VoiceChannel, name: str):
     try:
         await channel.edit(reason="time-update", name=name)
     except Exception as exception:
-        datamanagement.createLogRecord(
+        database.createLogRecord(
             guild=channel.guild,
             message=f"{channel.name}:{exception.__class__.__name__}:{exception}"
         )
@@ -81,7 +92,7 @@ async def onError(exception: Exception):
 def getTimeText(template: str, target: datetime):
     # datestr = timeStringHumanized(target)  # '1 month, 7 days and 1 hour'
     datestr = timeStringDays(target)  # '5 days'
-    return template.format(
+    return (template or "{time}").format(
         time=datestr
     )
 
