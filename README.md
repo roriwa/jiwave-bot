@@ -39,7 +39,7 @@ user@pc:~$ /path/to/jiwave-bot/src/run.sh
 
 ### Setup as Service (recommended)
 copy this code to `/etc/systemd/system/jiwave-bot.service`
-```ini
+```service
 [Unit]
 Description=jiwave-bot
 After=network.target
@@ -63,4 +63,5 @@ use `systemctl status jiwave-bot` to check the bot
 <sub>coming soon...</sub>
 
 # Links for development
-[docs: events](https://discordpy.readthedocs.io/en/stable/api.html#discord-api-events)
+- [docs: events](https://discordpy.readthedocs.io/en/stable/api.html#discord-api-events)
+- [py-cord](https://docs.pycord.dev/en/master/api.html#discord.SlashCommand)
