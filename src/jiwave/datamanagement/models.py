@@ -3,28 +3,29 @@
 r"""
 
 """
-from datetime import datetime as _datetime
-from dataclasses import dataclass as _model
+from sqlalchemy import Column, String, Integer, DateTime
+from .base import Base as BaseModel
 
 
-@_model
-class ChannelConfig:
-    guild_id: int
-    guild_name: str
-    channel_id: int
-    channel_orig_name: str
-    target_time: _datetime
+class ChannelConfig(BaseModel):
+    __tablename__ = "channel-config"
+
+    guild_id = Column(Integer)
+    channel_id = Column(Integer)
+    channel_orig_name = Column(String)
+    target_time: DateTime
 
 
-@_model
-class GuildConfig:
-    guild_id: int
-    guild_name: str
-    message_template: str
+class GuildConfig(BaseModel):
+    __tablename__ = "guild-config"
+
+    guild_id = Column(Integer, primary_key=True, unique=True)
+    message_template = Column(String, nullable=False)
 
 
-@_model
-class LogRecord:
-    guild_id: int
-    timestamp: _datetime
-    message: str
+class LogRecord(BaseModel):
+    __tablename__ = "logs"
+
+    guild_id = Column(Integer, primary_key=True)
+    timestamp = Column(Integer, primary_key=True)
+    message = Column(String, nullable=False)
