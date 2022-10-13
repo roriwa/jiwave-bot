@@ -5,3 +5,6 @@ r"""
 """
 from .base import Session
 from . import models as dbm
+from .crud import (
+    createLogRecord
+)

@@ -3,6 +3,8 @@
 r"""
 
 """
+import time
+
 from sqlalchemy import Column, String, Integer, DateTime
 from .base import Base as BaseModel
 
@@ -36,5 +38,5 @@ class LogRecord(BaseModel):
     __tablename__ = "logs"
 
     guild_id = Column(Integer, primary_key=True)
-    timestamp = Column(Integer, primary_key=True)
+    timestamp = Column(Integer, primary_key=True, default=time.time)
     message = Column(String, nullable=False)
