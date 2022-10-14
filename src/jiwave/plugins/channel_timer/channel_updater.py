@@ -29,12 +29,12 @@ async def channelUpdater():
 
     for guild in bot.guilds:
         with Session() as session:
-            configs: [dbm.TimerConfig] = session\
+            timer_configs: [dbm.TimerConfig] = session\
                 .query(dbm.TimerConfig)\
                 .filter(dbm.TimerConfig.guild_id == guild.id)\
                 .all()
 
-        if not configs:
+        if not timer_configs:
             database.createLogRecord(
                 guild=guild,
                 message=f"no channels configured for this guild"
@@ -49,7 +49,7 @@ async def channelUpdater():
 
         template = guild_config.message_template if guild_config else None
 
-        for config in configs:
+        for config in timer_configs:
             channel: discord.VoiceChannel = bot.get_channel(config.channel_id)
             if not channel:
                 database.createLogRecord(
