@@ -25,6 +25,7 @@ class ArchiveConfig(BaseModel):
     source_id = Column(Integer, nullable=False, primary_key=True, unique=True)
     target_id = Column(Integer, nullable=False)
     emoticon = Column(String, nullable=False)
+    count = Column(Integer, nullable=False)
 
 
 class GuildConfig(BaseModel):
