@@ -21,14 +21,16 @@ async def setup(bot: commands.Bot):
     channelUpdater.start(bot)
 
 
-@tasks.loop(hours=1)  # update every hour, maybe every day later
+# @tasks.loop(minutes=1)
+@tasks.loop(hours=1)
 @utility.logCalling
 async def channelUpdater(bot):
     for guild in bot.guilds:
         await guildUpdate(bot=bot, guild=guild)
 
 
-async def guildUpdate(bot: commands.Bot, guild: discord.guild):
+@utility.logCalling
+async def guildUpdate(bot: commands.Bot, guild: discord.Guild):
     with Session() as session:
         timer_configs: [dbm.TimerConfig] = session\
             .query(dbm.TimerConfig)\
@@ -36,10 +38,6 @@ async def guildUpdate(bot: commands.Bot, guild: discord.guild):
             .all()
 
     if not timer_configs:
-        database.createLogRecord(
-            guild=guild,
-            message=f"no channels configured for this guild"
-        )
         return
 
     with Session() as session:
@@ -94,7 +92,7 @@ async def onError(exception: Exception):
 
 def getTimeText(template: str, target: datetime.datetime):
     now = dateutils.today()
-    delta = now - target
+    delta = target - now
     # datestr = timeStringHumanized(delta)  # '1 month, 7 days and 1 hour'
     datestr = timeStringDays(delta)  # '5 days'
     return (template or "{time}").format(

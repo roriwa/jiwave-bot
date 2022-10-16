@@ -21,6 +21,7 @@ async def databaseCleanup():
     with Session() as session:
         limit = datetime.datetime.now() - datetime.timedelta(days=expiration_days)
         session.query(dbm.ArchiveMessage).filter(dbm.ArchiveMessage.timestamp <= limit).delete()
+        session.commit()
 
 
 @databaseCleanup.error

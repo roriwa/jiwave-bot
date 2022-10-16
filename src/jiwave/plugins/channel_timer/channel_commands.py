@@ -3,19 +3,18 @@
 r"""
 
 """
-import asyncio
 import dateutil.parser as dateparser
 import discord
 from discord.ext import commands
 from database import Session, dbm
-from channel_updater import guildUpdate
+from .channel_updater import guildUpdate  # noqa
 
 
 async def setup(bot: commands.Bot):
     bot.add_command(cmd_timer)
 
 
-@commands.group('timer')
+@commands.group('timer', aliases=['time'])
 @commands.guild_only()
 @commands.has_guild_permissions(manage_guild=True)
 async def cmd_timer(_: commands.Context):
@@ -47,33 +46,35 @@ async def cmd_list(context: commands.Context):
         for config in configured_channels:
             channel: discord.VoiceChannel = context.bot.get_channel(config.channel_id)
             embed.add_field(
-                name=channel.name,
-                value=config.target_time.strftime("%d.%m.%Y"),
+                name=config.channel_orig_name,
+                value=f"End: {config.target_time.strftime('%d.%m.%Y')}\n"
+                      f"Channel: {channel.mention}",
                 inline=False)
 
     await context.reply(embed=embed)
 
 
-@cmd_timer.command(name="info", aliases=['get'])
-async def cmd_info(context: commands.Context, channel: discord.VoiceChannel):
-    r"""
-    get the time for a channel
-    """
-
-    with Session() as session:
-        config = session\
-            .query(dbm.TimerConfig)\
-            .filter(dbm.TimerConfig.guild_id == context.guild.id, dbm.TimerConfig.channel_id == channel.id)\
-            .one_or_none()
-
-    embed = discord.Embed(color=discord.Color.green())
-
-    if config:
-        embed.title = f"Configured for {config.target_time.strftime('%d.%m.%Y')}"
-    else:
-        embed.title = "Channel is not Configured"
-
-    await context.reply(embed=embed)
+# @cmd_timer.command(name="info", aliases=['get'])
+# async def cmd_info(context: commands.Context, channel: discord.VoiceChannel):
+#     r"""
+#     get the time for a channel
+#     """
+#
+#     with Session() as session:
+#         config = session\
+#             .query(dbm.TimerConfig)\
+#             .filter(dbm.TimerConfig.guild_id == context.guild.id, dbm.TimerConfig.channel_id == channel.id)\
+#             .one_or_none()
+#
+#     embed = discord.Embed(color=discord.Color.green())
+#
+#     if config:
+#         embed.title = f"Configured for {config.target_time.strftime('%d.%m.%Y')}"
+#         embed.description = channel.mention
+#     else:
+#         embed.title = "Channel is not Configured"
+#
+#     await context.reply(embed=embed)
 
 
 @cmd_timer.command(name="add", aliases=['set'])
@@ -93,6 +94,9 @@ async def cmd_add(context: commands.Context, channel: discord.VoiceChannel, date
 
     with Session() as session:
         session.merge(timer_config)
+        session.commit()
+
+    await guildUpdate(bot=context.bot, guild=context.guild)
 
     embed = discord.Embed(
         color=discord.Color.green(),
@@ -100,8 +104,6 @@ async def cmd_add(context: commands.Context, channel: discord.VoiceChannel, date
         description=f"target date was recognised as {date.strftime('%d.%m.%Y')}"
     )
     await context.reply(embed=embed)
-
-    asyncio.create_task(guildUpdate(bot=context.bot, guild=context.guild))
 
 
 @cmd_timer.command(name="ignore", aliases=['remove'])
@@ -116,6 +118,7 @@ async def cmd_ignore(context: commands.Context, channel: discord.VoiceChannel):
 
         config: dbm.TimerConfig = q.one()
         q.delete()
+        session.commit()
 
     await channel.edit(reason="channel will no longer be updated", name=config.channel_orig_name)
     embed = discord.Embed(
@@ -126,12 +129,12 @@ async def cmd_ignore(context: commands.Context, channel: discord.VoiceChannel):
 
 
 cmd_list: commands.Command
-cmd_info: commands.Command
+# cmd_info: commands.Command
 cmd_add: commands.Command
 cmd_ignore: commands.Command
 
 
-@cmd_timer.command(name="format", aliases=['format', 'template'])
+@cmd_timer.command(name="format", aliases=['template'])
 async def cmd_format(context: commands.Context, *, template: str = None):
     r"""
     set the time-format for this server
@@ -143,22 +146,27 @@ async def cmd_format(context: commands.Context, *, template: str = None):
         pass  # just do nothing (equal to only read the current timeformat)
     elif template in ['default', 'reset']:
         with Session() as session:
-            session.query()\
+            session.query(dbm.GuildConfig)\
                 .filter(dbm.GuildConfig.guild_id == context.guild.id)\
-                .delete()
+                .update({dbm.GuildConfig.message_template: dbm.GuildConfig.message_template.default.arg})
+            session.commit()
     else:
         if not verifyTemplate(template):
             raise ValueError("invalid template. template must contain '{time}'")
 
-        with Session() as s:
-            tmc: dbm.GuildConfig = s\
+        with Session() as session:
+            tmc: dbm.GuildConfig = session\
                 .query(dbm.GuildConfig)\
                 .filter(dbm.GuildConfig.guild_id == context.guild.id)\
-                .one()
-            tmc.message_template = template
-            s.commit()
-
-        asyncio.create_task(guildUpdate(bot=context.bot, guild=context.guild))
+                .one_or_none()
+            if tmc:
+                tmc.message_template = template
+            else:
+                session.add(dbm.GuildConfig(
+                    guild_id=context.guild.id,
+                    message_template=template
+                ))
+            session.commit()
 
     with Session() as session:
         config: dbm.GuildConfig = session\
@@ -166,12 +174,18 @@ async def cmd_format(context: commands.Context, *, template: str = None):
             .filter(dbm.GuildConfig.guild_id == context.guild.id)\
             .one_or_none()
 
+    time_template = config.message_template if config else '{time}'
+
     embed = discord.Embed(
         color=discord.Color.green(),
         title="Timeformat for this Server",
-        description=f"{config.message_template if config else '{time}'}"
+        description=f"your current format is `{time_template}`\n"
+                    f"this would look like `{time_template.format(time='6 days')}`"
     )
     await context.reply(embed=embed)
+
+    if template and template not in ["reset", "default"]:
+        await guildUpdate(bot=context.bot, guild=context.guild)
 
 
 def verifyTemplate(template: str) -> bool:

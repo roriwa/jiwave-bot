@@ -17,10 +17,11 @@ async def setup(_):
 @tasks.loop(hours=6)
 @utility.logCalling
 async def reduceLogs():
-    expiration_days = 7
+    expiration_days = 14
     with Session() as session:
         limit = datetime.datetime.now() - datetime.timedelta(days=expiration_days)
         session.query(dbm.LogRecord).filter(dbm.LogRecord.timestamp <= limit).delete()
+        session.commit()
 
 
 @reduceLogs.error

@@ -5,7 +5,7 @@ r"""
 """
 import discord
 from discord.ext import commands
-import database
+from database import Session, dbm
 
 
 async def setup(bot: commands.Bot):
@@ -19,8 +19,14 @@ async def cmd_logs(context: commands.Context):
     r"""
     show problems and notifications from the bot
     """
+    with Session() as session:
+        last_logs: [dbm.LogRecord] = session\
+            .query(dbm.LogRecord)\
+            .filter(dbm.LogRecord.guild_id == context.guild.id)\
+            .order_by(dbm.LogRecord.timestamp.desc())\
+            .limit(25)\
+            .all()
 
-    last_logs = database.getLastLogs(guild=context.guild, limit=10)
     if not last_logs:
         embed = discord.Embed(
             title="No logs found",
@@ -32,7 +38,7 @@ async def cmd_logs(context: commands.Context):
         )
         for log in last_logs:
             embed.add_field(
-                name=str(log.timestamp),
+                name=log.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
                 value=f"```txt\n{log.message}```",
                 inline=False
             )

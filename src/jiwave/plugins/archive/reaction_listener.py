@@ -10,11 +10,13 @@ from discord.ext import commands
 from database import Session, dbm
 
 
-def setup(bot: commands.Bot):
+async def setup(bot: commands.Bot):
     bot.event(
-        functools.partial(
-            on_reaction_add,
-            bot
+        functools.wraps(on_reaction_add)(
+            functools.partial(
+                on_reaction_add,
+                bot
+            )
         )
     )
 

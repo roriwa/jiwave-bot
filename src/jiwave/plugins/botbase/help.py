@@ -27,11 +27,19 @@ async def cmd_help(context: commands.Context, *, commandName: str = None):
             embed.colour = discord.Colour.green()
             embed.add_field(
                 name=f"{context.clean_prefix}{command.name} {command.signature}",
-                value=command.help or "not available",
+                value=getCommandHelp(command),
                 inline=False
             )
+            if isinstance(command, commands.Group):
+                usable_commands = await getAvailableCommands(context, command.commands)
+                for subcommand in usable_commands:
+                    embed.add_field(
+                        name=f"{context.clean_prefix}{subcommand} {subcommand.signature}",
+                        value=getCommandHelp(subcommand),
+                        inline=False
+                    )
     else:
-        usable_commands = await getAvailableCommands(context)
+        usable_commands = await getAvailableCommands(context, context.bot.commands)
         if usable_commands:
             for command in usable_commands:
 
@@ -52,13 +60,13 @@ def getCommandHelp(command: commands.Command):
     return "no help available"
 
 
-async def getAvailableCommands(context: commands.Context):
-    bot = context.bot
+async def getAvailableCommands(context: commands.Context, command_list: [commands.Command]):
     usable = []
-    for command in bot.commands:
+    for command in command_list:
         try:
             if not command.hidden and await command.can_run(context):
                 usable.append(command)
         except Exception:  # noqa
             pass
+    usable.sort(key=lambda cmd: cmd.name)
     return usable
