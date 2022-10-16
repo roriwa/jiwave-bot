@@ -3,8 +3,7 @@
 r"""
 
 """
-import time
-
+import datetime
 from sqlalchemy import Column, String, Integer, DateTime
 from .base import Base as BaseModel
 
@@ -28,6 +27,14 @@ class ArchiveConfig(BaseModel):
     count = Column(Integer, nullable=False)
 
 
+class ArchiveMessage(BaseModel):
+    __tablename__ = "archive-messages"
+
+    message_id = Column(Integer, primary_key=True)
+    archive_id = Column(Integer, primary_key=True)
+    timestamp = Column(DateTime, primary_key=True, default=datetime.datetime.utcnow)
+
+
 class GuildConfig(BaseModel):
     __tablename__ = "guild-config"
 
@@ -39,5 +46,5 @@ class LogRecord(BaseModel):
     __tablename__ = "logs"
 
     guild_id = Column(Integer, primary_key=True)
-    timestamp = Column(Integer, primary_key=True, default=time.time)
+    timestamp = Column(DateTime, primary_key=True, default=datetime.datetime.utcnow)
     message = Column(String, nullable=False)

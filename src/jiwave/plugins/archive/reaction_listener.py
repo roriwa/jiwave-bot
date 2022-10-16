@@ -3,6 +3,7 @@
 r"""
 
 """
+import typing as t
 import functools
 import discord
 from discord.ext import commands
@@ -19,11 +20,28 @@ def setup(bot: commands.Bot):
 
 
 async def on_reaction_add(bot: commands.Bot, reaction: discord.Reaction, _: discord.User):
+
+    config = getArchiveConfig(reaction)
+
+    if not config or reaction.count < config.count:
+        return
+
+    archived = alreadyArchived(reaction.message)
+    if archived:
+        return
+
+    archive = bot.get_channel(config.target_id)
+    embed = buildEmbed(reaction)
+    archive_message = await archive.send(embed=embed)
+    archiveRegister(reaction.message, archive_message)
+
+
+def getArchiveConfig(reaction: discord.Reaction) -> dbm.ArchiveConfig:
     guild = reaction.message.guild
     channel = reaction.message.channel
 
     with Session() as session:
-        config: dbm.ArchiveConfig = session\
+        return session\
             .query(dbm.ArchiveConfig)\
             .filter(
                 dbm.ArchiveConfig.guild_id == guild.id,
@@ -32,6 +50,57 @@ async def on_reaction_add(bot: commands.Bot, reaction: discord.Reaction, _: disc
             )\
             .one_or_none()
 
-    if config:
-        if reaction.count >= config.count:
-            archive = bot.get_channel(config.target_id)
+
+def archiveRegister(message: discord.Message, archived: discord.Message):
+    archived = dbm.ArchiveMessage(
+        message_id=message,
+        archive_id=archived.id
+    )
+
+    with Session() as session:
+        session.add(archived)
+        session.commit()
+
+
+def alreadyArchived(message: discord.Message) -> dbm.ArchiveMessage:
+    with Session() as session:
+        return session\
+            .query(dbm.ArchiveMessage)\
+            .filter(dbm.ArchiveMessage.message_id == message.id)\
+            .one_or_none()
+
+
+def buildEmbed(reaction: discord.Reaction) -> discord.Embed:
+    message = reaction.message
+    author = message.author
+
+    embed = discord.Embed()
+    embed.title = f"see [message]({message.jump_url})"
+    embed.set_author(
+        name=author.name,
+        icon_url=author.avatar.url if author.avatar else author.default_avatar.url
+    )
+    embed.description = message.content
+    image, attachments = getImageAndAttachments(message.attachments)
+    if image:
+        embed.set_image(url=image.url)
+    for attachment in attachments:
+        embed.add_field(
+            name="Attachment",
+            value=f"[{attachment.filename}]({attachment.url})",
+            inline=False
+        )
+    embed.timestamp = message.created_at
+
+    return embed
+
+
+def getImageAndAttachments(attachments: [discord.Attachment])\
+        -> t.Tuple[t.Optional[discord.Attachment], t.List[discord.Attachment]]:
+    r"""
+    function filter the first image out
+    """
+    for index, attachment in enumerate(attachments):
+        if attachment.content_type.startswith('image/'):
+            return attachment, (attachments[:index] + attachment[index+1:])
+    return None, attachments
