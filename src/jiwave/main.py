@@ -10,7 +10,7 @@ import sys
 import discord
 from discord.ext import commands
 import humanize
-
+from database import base as database_basis
 import utility
 
 humanize.i18n.activate('de_DE')
@@ -38,19 +38,28 @@ async def on_error(*args):
 @(lambda c: setattr(bot, c.__name__, c))
 @utility.logCalling
 async def setup_hook():
-    for plugin in os.listdir('plugins'):
-        if plugin.startswith('_'):
-            continue
+    try:
+        for plugin in os.listdir('plugins'):
+            if plugin.startswith('_'):
+                continue
 
-        if os.path.isdir(plugin):
-            group = plugin
-            for module in os.listdir(os.path.join('plugins', group)):
-                await bot.load_extension(f'plugins.{group}.{module}')
-        else:
-            plugin = os.path.splitext(plugin)[0]
-
-            logging.info(f"Importing {plugin}")
-            await bot.load_extension(f'plugins.{plugin}')
+            if os.path.isdir(os.path.join("plugins", plugin)):
+                group = plugin
+                for module in os.listdir(os.path.join('plugins', group)):
+                    if module.startswith('_'):
+                        continue
+                    module = os.path.splitext(module)[0]
+                    name = f'plugins.{group}.{module}'
+                    logging.debug(f"Load Plugin: {name!r}")
+                    await bot.load_extension(name)
+            else:
+                plugin = os.path.splitext(plugin)[0]
+                name = f'plugins.{plugin}'
+                logging.debug(f"Load Plugin: {name!r}")
+                await bot.load_extension(name)
+    except Exception as exception:
+        await bot.close()
+        raise exception
 
 
 @bot.before_invoke
@@ -59,6 +68,7 @@ async def before_invoke(context: commands.Context):
 
 
 if __name__ == '__main__':
+    database_basis.createDatabase()
     bot.run(
         utility.getDiscordToken(),
         log_handler=None
