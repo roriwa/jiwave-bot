@@ -5,9 +5,10 @@ r"""
 """
 import asyncio
 import logging
-from datetime import datetime
+import datetime
 
 import discord
+from discord.ext import commands
 from discord.ext import tasks
 import dateutil.utils as dateutils
 import humanize
@@ -16,53 +17,55 @@ from database import Session, dbm
 import utility
 
 
-async def setup(_):
-    channelUpdater.start()
+async def setup(bot: commands.Bot):
+    channelUpdater.start(bot)
 
 
-@tasks.loop(minutes=5)  # update every hour, maybe every day later
+@tasks.loop(hours=1)  # update every hour, maybe every day later
 @utility.logCalling
-async def channelUpdater():
-    from main import bot
+async def channelUpdater(bot):
+    for guild in bot.guilds:
+        await guildUpdate(bot=bot, guild=guild)
+
+
+async def guildUpdate(bot: commands.Bot, guild: discord.guild):
+    with Session() as session:
+        timer_configs: [dbm.TimerConfig] = session\
+            .query(dbm.TimerConfig)\
+            .filter(dbm.TimerConfig.guild_id == guild.id)\
+            .all()
+
+    if not timer_configs:
+        database.createLogRecord(
+            guild=guild,
+            message=f"no channels configured for this guild"
+        )
+        return
+
+    with Session() as session:
+        guild_config = session\
+            .query(dbm.GuildConfig)\
+            .filter(dbm.GuildConfig.guild_id == guild.id)\
+            .one_or_none()
+
+    template = guild_config.message_template if guild_config else None
 
     all_edits = []
 
-    for guild in bot.guilds:
-        with Session() as session:
-            timer_configs: [dbm.TimerConfig] = session\
-                .query(dbm.TimerConfig)\
-                .filter(dbm.TimerConfig.guild_id == guild.id)\
-                .all()
-
-        if not timer_configs:
+    for config in timer_configs:
+        channel: discord.VoiceChannel = bot.get_channel(config.channel_id)
+        if not channel:
             database.createLogRecord(
                 guild=guild,
-                message=f"no channels configured for this guild"
+                message=f"channel not found. can't update. ({config.guild_id}: {config.channel_orig_name})"
             )
             continue
 
-        with Session() as session:
-            guild_config = session\
-                .query(dbm.GuildConfig)\
-                .filter(dbm.GuildConfig.guild_id == guild.id)\
-                .one_or_none()
-
-        template = guild_config.message_template if guild_config else None
-
-        for config in timer_configs:
-            channel: discord.VoiceChannel = bot.get_channel(config.channel_id)
-            if not channel:
-                database.createLogRecord(
-                    guild=guild,
-                    message=f"channel not found. can't update. ({config.guild_id}: {config.channel_orig_name})"
-                )
-                continue
-
-            timestring = getTimeText(template=template, target=config.target_time)
-            if channel.name != timestring:
-                all_edits.append(
-                    channelEdit(channel=channel, name=timestring)
-                )
+        timestring = getTimeText(template=template, target=config.target_time)
+        if channel.name != timestring:
+            all_edits.append(
+                channelEdit(channel=channel, name=timestring)
+            )
 
     await asyncio.gather(*all_edits)
 
@@ -89,24 +92,22 @@ async def onError(exception: Exception):
     logging.error(str(exception), exc_info=exception)
 
 
-def getTimeText(template: str, target: datetime):
-    # datestr = timeStringHumanized(target)  # '1 month, 7 days and 1 hour'
-    datestr = timeStringDays(target)  # '5 days'
+def getTimeText(template: str, target: datetime.datetime):
+    now = dateutils.today()
+    delta = now - target
+    # datestr = timeStringHumanized(delta)  # '1 month, 7 days and 1 hour'
+    datestr = timeStringDays(delta)  # '5 days'
     return (template or "{time}").format(
         time=datestr
     )
 
 
-def timeStringHumanized(target: datetime):
-    now = dateutils.today()
-    delta = now - target
+def timeStringHumanized(delta: datetime.timedelta):
     return humanize.precisedelta(delta, minimum_unit='hours')
     # '1 month, 7 days and 1 hour'
 
 
-def timeStringDays(target: datetime):
-    now = dateutils.today()
-    delta = target - now
+def timeStringDays(delta: datetime.timedelta):
     days = delta.days
     if days <= 0:
         return "no days"

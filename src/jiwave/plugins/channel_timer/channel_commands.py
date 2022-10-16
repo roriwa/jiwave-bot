@@ -3,10 +3,12 @@
 r"""
 
 """
+import asyncio
 import dateutil.parser as dateparser
 import discord
 from discord.ext import commands
 from database import Session, dbm
+from channel_updater import guildUpdate
 
 
 async def setup(bot: commands.Bot):
@@ -99,6 +101,8 @@ async def cmd_add(context: commands.Context, channel: discord.VoiceChannel, date
     )
     await context.reply(embed=embed)
 
+    asyncio.create_task(guildUpdate(bot=context.bot, guild=context.guild))
+
 
 @cmd_timer.command(name="ignore", aliases=['remove'])
 async def cmd_ignore(context: commands.Context, channel: discord.VoiceChannel):
@@ -153,6 +157,8 @@ async def cmd_format(context: commands.Context, *, template: str = None):
                 .one()
             tmc.message_template = template
             s.commit()
+
+        asyncio.create_task(guildUpdate(bot=context.bot, guild=context.guild))
 
     with Session() as session:
         config: dbm.GuildConfig = session\
