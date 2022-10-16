@@ -4,8 +4,9 @@ r"""
 
 """
 import logging
+import datetime
 from discord.ext import tasks
-import database
+from database import Session, dbm
 import utility
 
 
@@ -16,7 +17,10 @@ async def setup(_):
 @tasks.loop(hours=6)
 @utility.logCalling
 async def reduceLogs():
-    database.reduceLogs()
+    expiration_days = 7
+    with Session() as session:
+        limit = datetime.datetime.now() - datetime.timedelta(days=expiration_days)
+        session.query(dbm.LogRecord).filter(dbm.LogRecord.timestamp <= limit).delete()
 
 
 @reduceLogs.error
