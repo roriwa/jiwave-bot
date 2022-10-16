@@ -6,7 +6,6 @@ r"""
 import functools
 import logging
 import os
-import traceback
 from asyncio import iscoroutinefunction
 
 
@@ -31,8 +30,7 @@ def logCalling(func):
             try:
                 await func(*args, **kwargs)
             except Exception as exc:
-                logging.error(f"{func.__name__} failed with {exc.__class__.__qualname__}")
-                traceback.print_exception(type(exc), exc, exc.__traceback__)
+                logging.error(f"{func.__name__} failed with {exc.__class__.__qualname__}", exc_info=exc)
             else:
                 logging.debug(msg_on_stop)
 
@@ -45,8 +43,7 @@ def logCalling(func):
             try:
                 func(*args, **kwargs)
             except Exception as exc:
-                logging.error(f"{func.__name__} failed with {exc.__class__.__qualname__}")
-                traceback.print_exception(type(exc), exc, exc.__traceback__)
+                logging.error(f"{func.__name__} failed with {exc.__class__.__qualname__}", exc_info=exc)
             else:
                 logging.debug(msg_on_stop)
 
