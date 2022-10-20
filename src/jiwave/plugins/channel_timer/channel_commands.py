@@ -112,12 +112,12 @@ async def cmd_ignore(context: commands.Context, channel: discord.VoiceChannel):
     remove a channel
     """
     with Session() as session:
-        q = session\
+        config: dbm.TimerConfig = session\
             .query(dbm.TimerConfig)\
-            .filter(dbm.TimerConfig.guild_id == context.guild.id, dbm.TimerConfig.channel_id == channel.id)
+            .filter(dbm.TimerConfig.guild_id == context.guild.id, dbm.TimerConfig.channel_id == channel.id)\
+            .one()
 
-        config: dbm.TimerConfig = q.one()
-        q.delete()
+        session.delete(config)
         session.commit()
 
     await channel.edit(reason="channel will no longer be updated", name=config.channel_orig_name)
