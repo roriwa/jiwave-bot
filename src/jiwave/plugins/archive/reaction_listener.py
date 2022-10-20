@@ -8,7 +8,7 @@ import functools
 import discord
 from discord.ext import commands
 from database import Session, dbm
-from . import util  # noqa
+from . import _util  # noqa
 
 
 async def setup(bot: commands.Bot):
