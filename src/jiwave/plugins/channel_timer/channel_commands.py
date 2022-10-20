@@ -17,8 +17,15 @@ async def setup(bot: commands.Bot):
 @commands.group('timer', aliases=['time'])
 @commands.guild_only()
 @commands.has_guild_permissions(manage_guild=True)
-async def cmd_timer(_: commands.Context):
-    pass
+async def cmd_timer(context: commands.Context):
+    r"""
+    rename channels to display the remaining time until day X
+    """
+    if context.subcommand_passed:
+        return
+    else:
+        help_command = context.bot.get_command('help')
+        await help_command.callback(context=context, commandName=cmd_timer.name)
 
 
 cmd_timer: commands.Group
