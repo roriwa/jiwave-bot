@@ -11,12 +11,12 @@ import utility
 
 
 async def setup(_):
-    reduceLogs.start()
+    databaseLogCleanup.start()
 
 
 @tasks.loop(hours=6)
 @utility.logCalling
-async def reduceLogs():
+async def databaseLogCleanup():
     expiration_days = 14
     with Session() as session:
         limit = datetime.datetime.now() - datetime.timedelta(days=expiration_days)
@@ -24,6 +24,6 @@ async def reduceLogs():
         session.commit()
 
 
-@reduceLogs.error
+@databaseLogCleanup.error
 async def onError(exception: Exception):
     logging.error(str(exception), exc_info=exception)

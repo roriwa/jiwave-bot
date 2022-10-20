@@ -11,12 +11,12 @@ import utility
 
 
 async def setup(_):
-    databaseCleanup.start()
+    databaseArchiveCleanup.start()
 
 
 @tasks.loop(hours=6)
 @utility.logCalling
-async def databaseCleanup():
+async def databaseArchiveCleanup():
     expiration_days = 7
     with Session() as session:
         limit = datetime.datetime.now() - datetime.timedelta(days=expiration_days)
@@ -24,6 +24,6 @@ async def databaseCleanup():
         session.commit()
 
 
-@databaseCleanup.error
+@databaseArchiveCleanup.error
 async def onError(exception: Exception):
     logging.error(str(exception), exc_info=exception)
