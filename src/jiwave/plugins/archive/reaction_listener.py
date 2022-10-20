@@ -8,6 +8,7 @@ import functools
 import discord
 from discord.ext import commands
 from database import Session, dbm
+from . import util  # noqa
 
 
 async def setup(bot: commands.Bot):
@@ -25,7 +26,10 @@ async def on_reaction_add(bot: commands.Bot, reaction: discord.Reaction, _: disc
 
     config = getArchiveConfig(reaction)
 
-    if not config or reaction.count < config.count:
+    emojis = util.string2emojis(config.emoticon)
+    reactions = reaction.message.reactions
+
+    if not config or sum(r.count for r in reactions if str(r) in emojis) < config.count:
         return
 
     archived = alreadyArchived(reaction.message)
@@ -48,7 +52,7 @@ def getArchiveConfig(reaction: discord.Reaction) -> dbm.ArchiveConfig:
             .filter(
                 dbm.ArchiveConfig.guild_id == guild.id,
                 dbm.ArchiveConfig.source_id == channel.id,
-                dbm.ArchiveConfig.emoticon == str(reaction)
+                dbm.ArchiveConfig.emoticon.contains(str(reaction))
             )\
             .one_or_none()
 
