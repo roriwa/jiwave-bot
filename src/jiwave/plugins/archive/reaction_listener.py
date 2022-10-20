@@ -26,10 +26,13 @@ async def on_reaction_add(bot: commands.Bot, reaction: discord.Reaction, _: disc
 
     config = getArchiveConfig(reaction)
 
-    emojis = util.string2emojis(config.emoticon)
+    if not config:
+        return
+
+    emojis = _util.string2emojis(config.emoticon)
     reactions = reaction.message.reactions
 
-    if not config or sum(r.count for r in reactions if str(r) in emojis) < config.count:
+    if sum(r.count for r in reactions if str(r) in emojis) < config.count:
         return
 
     archived = alreadyArchived(reaction.message)
@@ -59,7 +62,7 @@ def getArchiveConfig(reaction: discord.Reaction) -> dbm.ArchiveConfig:
 
 def archiveRegister(message: discord.Message, archived: discord.Message):
     archived = dbm.ArchiveMessage(
-        message_id=message,
+        message_id=message.id,
         archive_id=archived.id
     )
 
@@ -81,12 +84,11 @@ def buildEmbed(reaction: discord.Reaction) -> discord.Embed:
     author = message.author
 
     embed = discord.Embed()
-    embed.title = f"see [message]({message.jump_url})"
     embed.set_author(
         name=author.name,
         icon_url=author.avatar.url if author.avatar else author.default_avatar.url
     )
-    embed.description = message.content
+    embed.description = f"see [message]({message.jump_url})\n{message.content}"
     image, attachments = getImageAndAttachments(message.attachments)
     if image:
         embed.set_image(url=image.url)
