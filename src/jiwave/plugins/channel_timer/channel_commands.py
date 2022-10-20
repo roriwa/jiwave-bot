@@ -85,15 +85,23 @@ async def cmd_add(context: commands.Context, channel: discord.VoiceChannel, date
     date = dateparser.parse(date, dayfirst=True)
     channel_name = channel.name
 
-    timer_config = dbm.TimerConfig(
-        guild_id=context.guild.id,
-        channel_id=channel.id,
-        channel_orig_name=channel_name,
-        target_time=date
-    )
-
     with Session() as session:
-        session.merge(timer_config)
+        obj: dbm.TimerConfig = session\
+            .query(dbm.TimerConfig)\
+            .filter(dbm.TimerConfig.guild_id == context.guild.id, dbm.TimerConfig.channel_id == channel.id)\
+            .one_or_none()
+
+        if obj:
+            obj.target_time = date
+        else:
+            timer_config = dbm.TimerConfig(
+                guild_id=context.guild.id,
+                channel_id=channel.id,
+                channel_orig_name=channel_name,
+                target_time=date
+            )
+            session.add(timer_config)
+
         session.commit()
 
     embed = discord.Embed(
