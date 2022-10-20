@@ -96,14 +96,14 @@ async def cmd_add(context: commands.Context, channel: discord.VoiceChannel, date
         session.merge(timer_config)
         session.commit()
 
-    await guildUpdate(bot=context.bot, guild=context.guild)
-
     embed = discord.Embed(
         color=discord.Color.green(),
         title=f"{channel_name} was added",
         description=f"target date was recognised as {date.strftime('%d.%m.%Y')}"
     )
     await context.reply(embed=embed)
+
+    await guildUpdate(bot=context.bot, guild=context.guild)
 
 
 @cmd_timer.command(name="ignore", aliases=['remove'])
