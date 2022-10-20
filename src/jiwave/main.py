@@ -22,9 +22,13 @@ humanize.i18n.activate('de_DE')
 sys.modules['main'] = sys.modules['__main__']
 
 
+intents = discord.Intents.default()
+intents.message_content = True
+
+
 bot = commands.Bot(
     command_prefix=commands.when_mentioned,
-    intents=discord.Intents.default()
+    intents=intents
 )
 
 

@@ -40,7 +40,7 @@ async def on_reaction_add(bot: commands.Bot, reaction: discord.Reaction, _: disc
         return
 
     archive = bot.get_channel(config.target_id)
-    embed = buildEmbed(reaction)
+    embed = buildEmbed(message=reaction.message)
     archive_message = await archive.send(embed=embed)
     archiveRegister(reaction.message, archive_message)
 
@@ -79,8 +79,7 @@ def alreadyArchived(message: discord.Message) -> dbm.ArchiveMessage:
             .one_or_none()
 
 
-def buildEmbed(reaction: discord.Reaction) -> discord.Embed:
-    message = reaction.message
+def buildEmbed(message: discord.Message) -> discord.Embed:
     author = message.author
 
     embed = discord.Embed()
@@ -88,7 +87,7 @@ def buildEmbed(reaction: discord.Reaction) -> discord.Embed:
         name=author.name,
         icon_url=author.avatar.url if author.avatar else author.default_avatar.url
     )
-    embed.description = f"see [message]({message.jump_url})\n{message.content}"
+    embed.description = f"[see message]({message.jump_url})\n{message.content}"
     image, attachments = getImageAndAttachments(message.attachments)
     if image:
         embed.set_image(url=image.url)
@@ -109,6 +108,6 @@ def getImageAndAttachments(attachments: [discord.Attachment])\
     function filter the first image out
     """
     for index, attachment in enumerate(attachments):
-        if attachment.content_type.startswith('image/'):
-            return attachment, (attachments[:index] + attachment[index+1:])
+        if attachment.content_type and attachment.content_type.startswith('image/'):
+            return attachment, (attachments[:index] + attachments[index+1:])
     return None, attachments
