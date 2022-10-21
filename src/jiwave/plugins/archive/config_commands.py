@@ -15,6 +15,8 @@ async def setup(bot: commands.Bot):
 
 
 @commands.group('archive')
+@commands.guild_only()
+@commands.has_guild_permissions(manage_guild=True)
 async def cmd_archive(context: commands.Context):
     r"""
     archive messages to a certain channel after x configured reactions
