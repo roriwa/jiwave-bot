@@ -20,7 +20,7 @@ async def cmd_help(context: commands.Context, *, commandName: str = None):
     embed = discord.Embed(title=f"Help for {commandName if commandName else 'jiwave-bot'}")
     if commandName:
         command = context.bot.get_command(commandName)
-        if not command:
+        if not command or not await canBeUsed(context, command):
             embed.colour = discord.Colour.red()
             embed.description = f"command {commandName} not found"
         else:
@@ -42,7 +42,6 @@ async def cmd_help(context: commands.Context, *, commandName: str = None):
         usable_commands = await getAvailableCommands(context, context.bot.commands)
         if usable_commands:
             for command in usable_commands:
-
                 embed.add_field(name=command.qualified_name, value=getCommandHelp(command))
         else:
             embed.description = "no commands found"
@@ -63,10 +62,21 @@ def getCommandHelp(command: commands.Command):
 async def getAvailableCommands(context: commands.Context, command_list: [commands.Command]):
     usable = []
     for command in command_list:
-        try:
-            if not command.hidden and await command.can_run(context):
-                usable.append(command)
-        except Exception:  # noqa
-            pass
+        if await canBeUsed(context, command):
+            usable.append(command)
     usable.sort(key=lambda cmd: cmd.name)
     return usable
+
+
+async def canBeUsed(context: commands.Context, command: commands.Command | commands.GroupMixin) -> bool:
+    if command.hidden:
+        return False
+    if command.parent and not await canBeUsed(context, command.parent):
+        return False
+    try:
+        if await command.can_run(context):
+            return True
+    except Exception:  # noqa
+        return False
+    else:
+        return False
