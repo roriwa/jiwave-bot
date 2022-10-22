@@ -10,7 +10,7 @@ async def setup(bot: commands.Bot):
     bot.add_command(cmd_test)
 
 
-@commands.command(name="test")
+@commands.command(name="test", hidden=True)
 @commands.is_owner()
 async def cmd_test(context: commands.Context):
     await context.reply("coming soon...")
