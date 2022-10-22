@@ -91,9 +91,6 @@ async def cmd_add(context: commands.Context, source: discord.TextChannel, target
     if not emojis:
         raise commands.UserInputError("add at least one reaction")
 
-    print(emojis)
-    print(_util.emojis2string(emojis))
-
     with Session() as session:
         obj: dbm.ArchiveConfig = session\
             .query(dbm.ArchiveConfig)\
