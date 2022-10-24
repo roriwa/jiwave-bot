@@ -82,12 +82,16 @@ def alreadyArchived(message: discord.Message) -> dbm.ArchiveMessage:
 def buildEmbed(message: discord.Message) -> discord.Embed:
     author = message.author
 
-    embed = discord.Embed()
+    embed = discord.Embed(
+        title="see message",
+        url=message.jump_url,
+        color=discord.Colour.dark_gold()
+    )
     embed.set_author(
         name=author.name,
         icon_url=author.avatar.url if author.avatar else author.default_avatar.url
     )
-    embed.description = f"[see message]({message.jump_url})\n{message.content}"
+    embed.description = message.content
     image, attachments = getImageAndAttachments(message.attachments)
     if image:
         embed.set_image(url=image.url)
